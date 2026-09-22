@@ -10,7 +10,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,17 +22,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-75mzjz8@u==&f#2fi7+3tck_5949g$k@db-2)d*n93z7z^j@#-"
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    "django-insecure-75mzjz8@u==&f#2fi7+3tck_5949g$k@db-2)d*n93z7z^j@#-",
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = [
-"localhost",
+    "localhost",
     "127.0.0.1",
     ".onrender.com",
-
 ]
 
 
@@ -48,16 +51,16 @@ INSTALLED_APPS = [
     "corsheaders",
 
     # Project apps
-     "accounts",
+    "accounts",
     "trading",
     "wallet",
     "ai_assistant",
 ]
 
 MIDDLEWARE = [
-     "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware"
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -87,13 +90,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 
 # Database
-# https://docs.djangoproject.com/en/6.1/ref/settings/#databases
+# Render provides DATABASE_URL. Fall back to SQLite for local dev.
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+    )
 }
 
 
@@ -115,9 +118,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-
-
 AUTH_USER_MODEL = "accounts.User"
 
 
@@ -137,6 +137,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 
 # Email
@@ -147,6 +157,8 @@ MAILERS = {
         "BACKEND": "django.core.mail.backends.console.EmailBackend",
     },
 }
+
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -156,4 +168,25 @@ REST_FRAMEWORK = {
     ),
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+
+# CORS — allow local dev + the deployed frontend
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+_cors_env = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+if _cors_env:
+    CORS_ALLOWED_ORIGINS += [
+        origin.strip()
+        for origin in _cors_env.split(",")
+        if origin.strip()
+    ]
+
+
+# CSRF — required for Django admin behind HTTPS
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.onrender.com",
+]
