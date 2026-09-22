@@ -1,0 +1,51 @@
+# ============================================================
+# Python / Django
+# ============================================================
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Django local state
+db.sqlite3
+db.sqlite3-journal
+*.log
+local_settings.py
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# ============================================================
+# Node / Vite
+# ============================================================
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+
+# ============================================================
+# Editor / OS
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================================
+# Build output / trees I generated during dev
+# ============================================================
+backend_tree.txt
+frontend_tree.txt
+classnames.txt
+all_pages.txt
+css_dump.txt
+Pasted text.txt
