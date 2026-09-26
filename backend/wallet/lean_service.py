@@ -9,16 +9,18 @@ LEAN_BASE_URL = os.environ.get(
     "LEAN_BASE_URL",
     "https://sandbox.leantech.me",
 )
-LEAN_APP_TOKEN = os.environ.get("LEAN_APP_TOKEN", "")
+LEAN_APP_TOKEN = os.environ.get(
+    "LEAN_APP_TOKEN", ""
+).strip()
 LEAN_WEBHOOK_SECRET = os.environ.get(
     "LEAN_WEBHOOK_SECRET", ""
-)
+).strip()
 
 
 def _headers():
     return {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {LEAN_APP_TOKEN}",
+        "lean-app-token": LEAN_APP_TOKEN,
     }
 
 
