@@ -24,12 +24,25 @@ LEAN_WEBHOOK_SECRET = os.environ.get(
     "LEAN_WEBHOOK_SECRET", ""
 ).strip()
 
-# Simple in-memory token cache
+
 _token_cache = {
     "access_token": None,
     "expires_at": 0,
 }
 
+
+def _get_access_token():
+    now = time.time()
+
+    if (
+        _token_cache["access_token"]
+        and _token_cache["expires_at"] > now + 30
+    ):
+        return _token_cache["access_token"]
+
+    url = f"{LEAN_AUTH_URL}/oauth2/token"
+
+    try:
         response = requests.post(
             url,
             data={
@@ -42,7 +55,6 @@ _token_cache = {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
             timeout=20,
-        
         )
     except requests.RequestException as exc:
         raise RuntimeError(f"Auth network error: {exc}")
