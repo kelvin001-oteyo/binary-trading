@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import os
+import time
 
 import requests
 
@@ -9,24 +10,79 @@ LEAN_BASE_URL = os.environ.get(
     "LEAN_BASE_URL",
     "https://sandbox.leantech.me",
 )
-LEAN_APP_TOKEN = os.environ.get(
-    "LEAN_APP_TOKEN", ""
+LEAN_AUTH_URL = os.environ.get(
+    "LEAN_AUTH_URL",
+    "https://auth.sandbox.leantech.me",
+)
+LEAN_CLIENT_ID = os.environ.get(
+    "LEAN_CLIENT_ID", ""
+).strip()
+LEAN_CLIENT_SECRET = os.environ.get(
+    "LEAN_CLIENT_SECRET", ""
 ).strip()
 LEAN_WEBHOOK_SECRET = os.environ.get(
     "LEAN_WEBHOOK_SECRET", ""
 ).strip()
 
+# Simple in-memory token cache
+_token_cache = {
+    "access_token": None,
+    "expires_at": 0,
+}
+
+
+def _get_access_token():
+    """Exchange Client ID + Client Secret for a Bearer JWT."""
+    now = time.time()
+
+    if (
+        _token_cache["access_token"]
+        and _token_cache["expires_at"] > now + 30
+    ):
+        return _token_cache["access_token"]
+
+    url = f"{LEAN_AUTH_URL}/oauth2/token"
+
+    try:
+        response = requests.post(
+            url,
+            data={
+                "grant_type": "client_credentials",
+                "client_id": LEAN_CLIENT_ID,
+                "client_secret": LEAN_CLIENT_SECRET,
+            },
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            timeout=20,
+        )
+    except requests.RequestException as exc:
+        raise RuntimeError(f"Auth network error: {exc}")
+
+    if response.status_code != 200:
+        raise RuntimeError(
+            f"Auth HTTP {response.status_code}: "
+            f"{response.text[:300]}"
+        )
+
+    data = response.json()
+    token = data.get("access_token")
+
+    if not token:
+        raise RuntimeError(f"No access_token in auth response: {data}")
+
+    expires_in = int(data.get("expires_in", 3600))
+
+    _token_cache["access_token"] = token
+    _token_cache["expires_at"] = now + expires_in
+
+    return token
+
 
 def _headers():
-    import sys
-    print(
-        f"[LEAN DEBUG] token_len={len(LEAN_APP_TOKEN)} "
-        f"base_url={LEAN_BASE_URL}",
-        file=sys.stderr,
-    )
     return {
         "Content-Type": "application/json",
-        "lean-app-token": LEAN_APP_TOKEN,
+        "Authorization": f"Bearer {_get_access_token()}",
     }
 
 
@@ -41,6 +97,8 @@ def create_customer(app_user_id):
             headers=_headers(),
             timeout=20,
         )
+    except RuntimeError as exc:
+        return None, str(exc)
     except requests.RequestException as exc:
         return None, f"Network error: {exc}"
 
@@ -84,6 +142,8 @@ def create_payment_intent(
             headers=_headers(),
             timeout=20,
         )
+    except RuntimeError as exc:
+        return None, str(exc)
     except requests.RequestException as exc:
         return None, f"Network error: {exc}"
 
