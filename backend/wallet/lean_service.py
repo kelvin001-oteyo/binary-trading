@@ -14,11 +14,28 @@ LEAN_WEBHOOK_SECRET = os.environ.get(
 )
 
 
-def _headers():
-    return {
-        "Content-Type": "application/json",
-        "lean-app-token": LEAN_APP_TOKEN,
-    }
+def create_customer(app_user_id):
+    url = f"{LEAN_BASE_URL}/customers/v1/"
+    payload = {"app_user_id": str(app_user_id)}
+
+    try:
+        response = requests.post(
+            url,
+            json=payload,
+            headers=_headers(),
+            timeout=20,
+        )
+    except requests.RequestException as exc:
+        return None, f"Network error: {exc}"
+
+    if response.status_code not in (200, 201):
+        token_len = len(LEAN_APP_TOKEN)
+        return None, (
+            f"HTTP {response.status_code} | "
+            f"token_len={token_len} | "
+            f"body={response.text[:200]}"
+        )
+    # ... rest
 
 
 def create_customer(app_user_id):
