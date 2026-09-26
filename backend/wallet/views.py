@@ -11,6 +11,18 @@ from rest_framework.views import APIView
 from wallet.models import Wallet, WalletTransaction
 
 
+import json
+
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+from wallet.lean_service import (
+    create_customer,
+    create_payment_intent,
+    verify_webhook_signature,
+)
+
+
 class MyWalletView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -122,3 +134,145 @@ class WalletTransactionListView(APIView):
         return paginator.get_paginated_response(
             serializer.data
         )
+
+
+class LeanCreateCustomerView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        wallet, _ = Wallet.objects.get_or_create(
+            user=request.user
+        )
+
+        if wallet.lean_customer_id:
+            return Response(
+                {"customer_id": wallet.lean_customer_id},
+                status=status.HTTP_200_OK,
+            )
+
+        customer_id, error = create_customer(request.user.id)
+
+        if error:
+            return Response(
+                {"detail": f"Lean error: {error}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        wallet.lean_customer_id = customer_id
+        wallet.save(update_fields=["lean_customer_id", "updated_at"])
+
+        return Response(
+            {"customer_id": customer_id},
+            status=status.HTTP_200_OK,
+        )
+
+
+class LeanCreatePaymentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        amount = request.data.get("amount")
+
+        if amount is None:
+            return Response(
+                {"detail": "amount is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            amount = float(amount)
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "amount must be a number."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if amount <= 0:
+            return Response(
+                {"detail": "amount must be greater than zero."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        wallet, _ = Wallet.objects.get_or_create(
+            user=request.user
+        )
+
+        if not wallet.lean_customer_id:
+            return Response(
+                {
+                    "detail": (
+                        "No Lean customer linked. "
+                        "Call create-customer first."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        destination_id = os.environ.get(
+            "LEAN_PAYMENT_DESTINATION_ID", ""
+        )
+
+        if not destination_id:
+            return Response(
+                {
+                    "detail": (
+                        "LEAN_PAYMENT_DESTINATION_ID "
+                        "not configured on the server."
+                    )
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        intent_id, error = create_payment_intent(
+            wallet.lean_customer_id,
+            amount,
+            destination_id,
+        )
+
+        if error:
+            return Response(
+                {"detail": f"Lean error: {error}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response(
+            {"payment_intent_id": intent_id},
+            status=status.HTTP_200_OK,
+        )
+
+@method_decorator(csrf_exempt, name="dispatch")
+class LeanWebhookView(APIView):
+    permission_classes = []
+
+    def post(self, request):
+        raw_body = request.body
+        signature = request.headers.get("lean-signature", "")
+
+        if not verify_webhook_signature(raw_body, signature):
+            return Response(
+                {"detail": "Invalid signature."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        try:
+            payload = json.loads(raw_body)
+        except json.JSONDecodeError:
+            return Response(
+                {"detail": "Invalid JSON."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        event_type = payload.get("type")
+
+        # Only act on completed payments for now
+        if event_type not in (
+            "payment.created",
+            "payment.updated",
+        ):
+            return Response({"received": True})
+
+        # Webhook payload shape varies — log for now
+        print(f"[LEAN WEBHOOK] {event_type}")
+        print(json.dumps(payload, indent=2))
+
+        return Response({"received": True})
