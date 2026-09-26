@@ -30,31 +30,19 @@ _token_cache = {
     "expires_at": 0,
 }
 
-
-def _get_access_token():
-    """Exchange Client ID + Client Secret for a Bearer JWT."""
-    now = time.time()
-
-    if (
-        _token_cache["access_token"]
-        and _token_cache["expires_at"] > now + 30
-    ):
-        return _token_cache["access_token"]
-
-    url = f"{LEAN_AUTH_URL}/oauth2/token"
-
-    try:
         response = requests.post(
             url,
             data={
                 "grant_type": "client_credentials",
                 "client_id": LEAN_CLIENT_ID,
                 "client_secret": LEAN_CLIENT_SECRET,
+                "scope": "api",
             },
             headers={
                 "Content-Type": "application/x-www-form-urlencoded",
             },
             timeout=20,
+        
         )
     except requests.RequestException as exc:
         raise RuntimeError(f"Auth network error: {exc}")
