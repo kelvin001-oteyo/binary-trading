@@ -18,6 +18,12 @@ LEAN_WEBHOOK_SECRET = os.environ.get(
 
 
 def _headers():
+    import sys
+    print(
+        f"[LEAN DEBUG] token_len={len(LEAN_APP_TOKEN)} "
+        f"base_url={LEAN_BASE_URL}",
+        file=sys.stderr,
+    )
     return {
         "Content-Type": "application/json",
         "lean-app-token": LEAN_APP_TOKEN,
