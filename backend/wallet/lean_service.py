@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import os
+
 import requests
 
 
@@ -14,37 +15,15 @@ LEAN_WEBHOOK_SECRET = os.environ.get(
 )
 
 
-def create_customer(app_user_id):
-    url = f"{LEAN_BASE_URL}/customers/v1/"
-    payload = {"app_user_id": str(app_user_id)}
-
-    try:
-        response = requests.post(
-            url,
-            json=payload,
-            headers=_headers(),
-            timeout=20,
-        )
-    except requests.RequestException as exc:
-        return None, f"Network error: {exc}"
-
-    if response.status_code not in (200, 201):
-        token_len = len(LEAN_APP_TOKEN)
-        return None, (
-            f"HTTP {response.status_code} | "
-            f"token_len={token_len} | "
-            f"body={response.text[:200]}"
-        )
-    # ... rest
+def _headers():
+    return {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {LEAN_APP_TOKEN}",
+    }
 
 
 def create_customer(app_user_id):
-    """
-    Create a Lean customer for the given app_user_id.
-    Returns (customer_id, error_message).
-    """
     url = f"{LEAN_BASE_URL}/customers/v1/"
-
     payload = {"app_user_id": str(app_user_id)}
 
     try:
@@ -67,7 +46,7 @@ def create_customer(app_user_id):
     customer_id = data.get("customer_id")
 
     if not customer_id:
-        return None, f"No customer_id in Lean response: {data}"
+        return None, f"No customer_id in response: {data}"
 
     return customer_id, None
 
@@ -78,13 +57,7 @@ def create_payment_intent(
     payment_destination_id,
     description="Deposit",
 ):
-    """
-    Create a Lean payment intent for the given customer.
-    amount_aed is a float in AED (e.g. 500.00).
-    Returns (payment_intent_id, error_message).
-    """
     url = f"{LEAN_BASE_URL}/payments/v1/intents"
-
     description = (description or "Deposit")[:12]
 
     payload = {
@@ -122,12 +95,6 @@ def create_payment_intent(
 
 
 def verify_webhook_signature(raw_body, signature_header):
-    """
-    Verify a Lean webhook using the Webhook Secret.
-    raw_body: bytes of the exact request body received.
-    signature_header: value of the 'lean-signature' header.
-    Returns True if valid.
-    """
     if not signature_header or not LEAN_WEBHOOK_SECRET:
         return False
 
