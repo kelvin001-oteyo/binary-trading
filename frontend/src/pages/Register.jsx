@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import authBg from "../assets/auth-bg.jpg";
 
+import "./Auth.css";
+
 function Register() {
   const navigate = useNavigate();
 

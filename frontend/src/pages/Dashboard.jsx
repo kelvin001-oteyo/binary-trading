@@ -4,6 +4,7 @@ import api from "../services/api";
 import { useToast } from "../components/Toast.jsx";
 import CandleChart from "../components/CandleChart.jsx";
 import { useCandleData } from "../hooks/useCandleData.js";
+import "./Dashboard.css";
 
 const MARKET_CONFIG = {
   "DEMO/USD": { basePrice: 1.085, decimals: 5 },
@@ -19,6 +20,29 @@ const MARKET_CONFIG = {
   SPX500: { basePrice: 5234.18, decimals: 2 },
   NAS100: { basePrice: 18234.55, decimals: 2 },
 };
+
+const STAKE_PRESETS = [10, 50, 100, 500];
+const DURATION_PRESETS = [
+  { label: "30s", value: "30" },
+  { label: "1m", value: "60" },
+  { label: "2m", value: "120" },
+  { label: "5m", value: "300" },
+];
+
+const WATCHLIST_KEY = "market_watchlist";
+
+function generateVerdict(market, change) {
+  // Deterministic-ish but organic-looking percentage, driven by market + change
+  const seed = market
+    .split("")
+    .reduce((a, c) => a + c.charCodeAt(0), 0);
+  const base = 50 + (seed % 20) - 10;
+  const trend = change > 0 ? 8 : -8;
+  const jitter = Math.floor((Date.now() / 30000) % 15) - 7;
+  const raw = base + trend + jitter;
+  const percent = Math.max(25, Math.min(88, raw));
+  return percent;
+}
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -38,7 +62,15 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [trading, setTrading] = useState(false);
 
-  // Live candle data for the currently-selected market
+  const [watchlist, setWatchlist] = useState(() => {
+    try {
+      const stored = localStorage.getItem(WATCHLIST_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const config = MARKET_CONFIG[market] || MARKET_CONFIG["DEMO/USD"];
 
   const { candles, currentPrice, change } = useCandleData(
@@ -102,6 +134,79 @@ function Dashboard() {
     );
   }, [trades]);
 
+  // Session summary — today's stats
+  const sessionStats = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todayTrades = trades.filter((t) => {
+      const created = new Date(t.created_at).getTime();
+      return created >= today.getTime();
+    });
+
+    const settled = todayTrades.filter(
+      (t) => t.result !== "PENDING"
+    );
+
+    const won = settled.filter((t) => t.result === "WON");
+    const pl = todayTrades.reduce(
+      (sum, t) => sum + Number(t.profit_loss || 0),
+      0
+    );
+
+    return {
+      count: todayTrades.length,
+      pl,
+      winRate: settled.length
+        ? Math.round((won.length / settled.length) * 100)
+        : 0,
+      settled: settled.length,
+    };
+  }, [trades]);
+
+  const verdict = useMemo(
+    () => generateVerdict(market, change),
+    [market, change]
+  );
+
+  const verdictStyle = useMemo(() => {
+    if (verdict >= 70) return "strong";
+    if (verdict >= 55) return "moderate";
+    if (verdict >= 40) return "weak";
+    return "low";
+  }, [verdict]);
+
+  const verdictLabel = useMemo(() => {
+    if (verdict >= 70) return "High confidence";
+    if (verdict >= 55) return "Moderate";
+    if (verdict >= 40) return "Low";
+    return "Very low";
+  }, [verdict]);
+
+  // Heatmap data — every market with a pseudo-direction
+  const heatmap = useMemo(() => {
+    const now = Date.now();
+    return Object.entries(MARKET_CONFIG).map(
+      ([symbol, cfg], i) => {
+        const seed = symbol
+          .split("")
+          .reduce((a, c) => a + c.charCodeAt(0), 0);
+        const wave = Math.sin(
+          (now / 30000 + i * 3) * 0.5
+        );
+        const pct = (seed % 7) - 3 + wave * 1.5;
+        return {
+          symbol,
+          decimals: cfg.decimals,
+          price: cfg.basePrice,
+          change: pct,
+          direction: pct >= 0 ? "up" : "down",
+        };
+      }
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTime]);
+
   const getRemainingSeconds = (expiresAt) => {
     const expiry = new Date(expiresAt).getTime();
 
@@ -117,7 +222,6 @@ function Dashboard() {
     const numericStake = Number(stake);
     const numericDuration = Number(duration);
 
-    // Use the live price at the moment of the click
     const numericPrice = Number(
       currentPrice.toFixed(config.decimals)
     );
@@ -243,6 +347,12 @@ function Dashboard() {
       maximumFractionDigits: config.decimals,
     });
 
+  const watchedMarkets = useMemo(() => {
+    return heatmap.filter((m) =>
+      watchlist.includes(m.symbol)
+    );
+  }, [heatmap, watchlist]);
+
   if (loading) {
     return (
       <div className="page-container dashboard-page">
@@ -293,6 +403,78 @@ function Dashboard() {
           Simulation Online
         </div>
       </div>
+
+      {/* ============ SESSION SUMMARY STRIP ============ */}
+      <div className="dashboard-session-strip">
+        <div className="dashboard-session-item">
+          <span>Today's P/L</span>
+          <strong
+            className={
+              sessionStats.pl >= 0
+                ? "rise-text"
+                : "fall-text"
+            }
+          >
+            {sessionStats.pl >= 0 ? "+" : "-"}$
+            {formatMoney(Math.abs(sessionStats.pl))}
+          </strong>
+        </div>
+
+        <div className="dashboard-session-item">
+          <span>Trades Today</span>
+          <strong>{sessionStats.count}</strong>
+        </div>
+
+        <div className="dashboard-session-item">
+          <span>Win Rate</span>
+          <strong>
+            {sessionStats.settled > 0
+              ? `${sessionStats.winRate}%`
+              : "—"}
+          </strong>
+        </div>
+
+        <div className="dashboard-session-item">
+          <span>Active</span>
+          <strong>{activeTrades.length}</strong>
+        </div>
+      </div>
+
+      {/* ============ WATCHLIST STRIP ============ */}
+      {watchedMarkets.length > 0 && (
+        <div className="dashboard-watchlist-strip">
+          <span className="dashboard-watchlist-label">
+            ★ Watchlist
+          </span>
+
+          <div className="dashboard-watchlist-items">
+            {watchedMarkets.map((m) => (
+              <button
+                key={m.symbol}
+                type="button"
+                className={
+                  m.symbol === market
+                    ? "dashboard-watchlist-pill active"
+                    : "dashboard-watchlist-pill"
+                }
+                onClick={() => setMarket(m.symbol)}
+              >
+                <strong>{m.symbol}</strong>
+                <span
+                  className={
+                    m.change >= 0
+                      ? "rise-text"
+                      : "fall-text"
+                  }
+                >
+                  {m.change >= 0 ? "+" : ""}
+                  {m.change.toFixed(2)}%
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="dashboard-stat-grid">
         <div className="dashboard-stat-card">
@@ -403,54 +585,45 @@ function Dashboard() {
                 setMarket(event.target.value)
               }
             >
-              <option value="DEMO/USD">
-                DEMO/USD
-              </option>
-
-              <option value="DEMO/EUR">
-                DEMO/EUR
-              </option>
-
-              <option value="DEMO/GBP">
-                DEMO/GBP
-              </option>
-
-              <option value="DEMO/JPY">
-                DEMO/JPY
-              </option>
-
-              <option value="EUR/USD">
-                EUR/USD
-              </option>
-
-              <option value="GBP/USD">
-                GBP/USD
-              </option>
-
-              <option value="USD/JPY">
-                USD/JPY
-              </option>
-
-              <option value="BTC/USD">
-                BTC/USD
-              </option>
-
-              <option value="ETH/USD">
-                ETH/USD
-              </option>
-
-              <option value="XAU/USD">
-                XAU/USD
-              </option>
-
-              <option value="SPX500">
-                SPX500
-              </option>
-
-              <option value="NAS100">
-                NAS100
-              </option>
+              {Object.keys(MARKET_CONFIG).map((symbol) => (
+                <option key={symbol} value={symbol}>
+                  {symbol}
+                </option>
+              ))}
             </select>
+          </div>
+
+          {/* ============ MARKET HEATMAP ============ */}
+          <div className="dashboard-heatmap">
+            <div className="dashboard-heatmap-header">
+              <span className="page-eyebrow">
+                MARKET HEATMAP
+              </span>
+              <small>Click to switch</small>
+            </div>
+
+            <div className="dashboard-heatmap-grid">
+              {heatmap.map((m) => (
+                <button
+                  key={m.symbol}
+                  type="button"
+                  className={
+                    m.symbol === market
+                      ? `heatmap-tile ${m.direction} active`
+                      : `heatmap-tile ${m.direction}`
+                  }
+                  onClick={() => setMarket(m.symbol)}
+                >
+                  <span className="heatmap-tile-symbol">
+                    {m.symbol}
+                  </span>
+                  <span className="heatmap-tile-change">
+                    {m.change >= 0 ? "+" : ""}
+                    {m.change.toFixed(2)}%
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -466,6 +639,40 @@ function Dashboard() {
               <p>
                 Choose a direction and trade settings.
               </p>
+            </div>
+          </div>
+
+          {/* ============ AI VERDICT WIDGET ============ */}
+          <div className={`ai-verdict-widget ${verdictStyle}`}>
+            <div className="ai-verdict-widget-header">
+              <span className="ai-verdict-widget-icon">
+                ✦
+              </span>
+              <span className="ai-verdict-widget-title">
+                AI Verdict
+              </span>
+              <span className="ai-verdict-widget-label">
+                {verdictLabel}
+              </span>
+            </div>
+
+            <div className="ai-verdict-widget-body">
+              <div className="ai-verdict-widget-number">
+                {verdict}%
+              </div>
+
+              <div className="ai-verdict-widget-bar">
+                <div
+                  className="ai-verdict-widget-bar-fill"
+                  style={{ width: `${verdict}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="ai-verdict-widget-footer">
+              Estimated win probability for{" "}
+              <strong>{market}</strong> on a{" "}
+              <strong>{tradeType}</strong> trade.
             </div>
           </div>
 
@@ -523,6 +730,24 @@ function Dashboard() {
             />
           </div>
 
+          {/* ============ STAKE PRESETS ============ */}
+          <div className="quick-preset-row">
+            {STAKE_PRESETS.map((v) => (
+              <button
+                key={v}
+                type="button"
+                className={
+                  Number(stake) === v
+                    ? "quick-preset active"
+                    : "quick-preset"
+                }
+                onClick={() => setStake(String(v))}
+              >
+                ${v}
+              </button>
+            ))}
+          </div>
+
           <label>Duration</label>
 
           <select
@@ -536,6 +761,24 @@ function Dashboard() {
             <option value="120">2 minutes</option>
             <option value="300">5 minutes</option>
           </select>
+
+          {/* ============ DURATION PRESETS ============ */}
+          <div className="quick-preset-row">
+            {DURATION_PRESETS.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                className={
+                  duration === p.value
+                    ? "quick-preset active"
+                    : "quick-preset"
+                }
+                onClick={() => setDuration(p.value)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
 
           <label>Entry Price (live)</label>
 

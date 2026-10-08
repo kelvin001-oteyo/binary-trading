@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import heroBg from "../assets/hero-bg.jpg";
 import ctaBg from "../assets/cta-bg.jpg";
 
+import "./Home.css";
+
 const TICKER_MARKETS = [
   { symbol: "EUR/USD", price: 1.085, decimals: 5 },
   { symbol: "GBP/USD", price: 1.2642, decimals: 5 },
@@ -306,9 +308,9 @@ function Home() {
       >
         <div className="home-navbar-inner">
           <Link to="/" className="home-brand">
-            <span className="home-brand-mark">B</span>
+            <span className="home-brand-mark">YT</span>
             <span className="home-brand-text">
-              Binary Trading
+              YoungTraders
             </span>
           </Link>
 
@@ -426,7 +428,7 @@ function Home() {
       >
         <div className="home-hero-content">
           <span className="home-eyebrow">
-            BINARY TRADING SIMULATOR
+            YOUNGTRADERS · TRADING SIMULATOR
           </span>
 
           <h1>
@@ -570,7 +572,7 @@ function Home() {
         <Reveal>
           <div className="home-section-heading">
             <span className="home-eyebrow">
-              WHY BINARY TRADING
+              WHY YOUNGTRADERS
             </span>
             <h2>Built for practice that feels real</h2>
             <p>
@@ -629,7 +631,7 @@ function Home() {
               COMPARISON
             </span>
             <h2>
-              Binary Trading vs. a traditional broker
+              YoungTraders vs. a traditional broker
             </h2>
             <p>
               What you get here that you won't get
@@ -641,7 +643,7 @@ function Home() {
             <div className="home-compare-head">
               <span></span>
               <span className="home-compare-ours">
-                Binary Trading
+                YoungTraders
               </span>
               <span className="home-compare-theirs">
                 Traditional broker
@@ -998,9 +1000,9 @@ function Home() {
         <div className="home-footer-inner">
           <div className="home-footer-brand">
             <Link to="/" className="home-brand">
-              <span className="home-brand-mark">B</span>
+              <span className="home-brand-mark">YT</span>
               <span className="home-brand-text">
-                Binary Trading
+                YoungTraders
               </span>
             </Link>
             <p>
@@ -1037,7 +1039,7 @@ function Home() {
 
         <div className="home-footer-bottom">
           <span>
-            © {new Date().getFullYear()} Binary Trading
+            © {new Date().getFullYear()} YoungTraders
           </span>
 
           <div className="home-footer-legal">

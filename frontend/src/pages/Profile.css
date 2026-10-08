@@ -1,0 +1,268 @@
+/* ============================================================
+   YOUNGTRADERS — PROFILE
+   User info card + information grid + logout.
+   ============================================================ */
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+/* ============================================================
+   PROFILE CARD (left — avatar + demo badge)
+   ============================================================ */
+
+.profile-card {
+  position: relative;
+  padding: 36px 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  overflow: hidden;
+  animation: yt-scale-in var(--dur-slow) var(--ease-out) both;
+  transition:
+    box-shadow var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
+}
+
+.profile-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: var(--grad-brand);
+}
+
+.profile-card::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 0;
+  right: 0;
+  height: 140px;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(37, 99, 235, 0.08),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.profile-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+}
+
+/* ---------- Avatar ---------- */
+
+.profile-avatar {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--grad-brand);
+  color: #ffffff;
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  box-shadow: 0 14px 36px rgba(37, 99, 235, 0.35),
+    inset 0 2px 0 rgba(255, 255, 255, 0.2);
+  z-index: 1;
+  animation: yt-pop var(--dur-slow) var(--ease-spring) both;
+}
+
+.profile-avatar::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(37, 99, 235, 0.15);
+  animation: yt-countdown-pulse 3s var(--ease-in-out) infinite;
+}
+
+/* ---------- Demo badge ---------- */
+
+.profile-demo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  color: var(--brand-dark);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: var(--radius-full);
+  z-index: 1;
+}
+
+.profile-demo-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+/* ============================================================
+   INFORMATION PANEL (right — fields)
+   ============================================================ */
+
+.profile-information {
+  padding: 30px 32px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  animation: yt-scale-in var(--dur-slow) var(--ease-out) 0.1s both;
+  transition:
+    box-shadow var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
+}
+
+.profile-information:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+}
+
+.profile-information > h2,
+.profile-information > .profile-section-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-dark);
+  margin: 0 0 22px 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+/* ---------- Field rows ---------- */
+
+.profile-field {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 20px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.profile-field:last-of-type {
+  border-bottom: none;
+  padding-bottom: 8px;
+}
+
+.profile-field > span {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.profile-field > strong {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--text-dark);
+  word-break: break-word;
+}
+
+.profile-field > strong.mono {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ============================================================
+   LOGOUT BUTTON
+   ============================================================ */
+
+.logout-large-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 24px;
+  margin-top: 24px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-md);
+  color: var(--danger-dark);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.logout-large-button:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(239, 68, 68, 0.35);
+}
+
+.logout-large-button:active {
+  transform: translateY(0);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-card {
+    padding: 30px 24px;
+  }
+
+  .profile-information {
+    padding: 24px;
+  }
+
+  .profile-field {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 14px 0;
+  }
+}
+
+@media (max-width: 500px) {
+  .profile-avatar {
+    width: 88px;
+    height: 88px;
+    font-size: 32px;
+  }
+
+  .profile-card {
+    padding: 26px 20px;
+  }
+
+  .profile-information > h2 {
+    font-size: 1.125rem;
+  }
+}

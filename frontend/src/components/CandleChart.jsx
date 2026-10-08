@@ -1,9 +1,12 @@
+import "./CandleChart.css";
+
 function CandleChart({
   candles,
   width = 900,
   height = 380,
   decimals = 5,
   padding = { top: 20, right: 70, bottom: 30, left: 20 },
+  movingAverage = null,
 }) {
   if (!candles || candles.length === 0) {
     return (
@@ -19,7 +22,6 @@ function CandleChart({
   const innerW = width - padding.left - padding.right;
   const innerH = height - padding.top - padding.bottom;
 
-  // Determine price range across all candles
   let min = Infinity;
   let max = -Infinity;
 
@@ -36,18 +38,15 @@ function CandleChart({
   const yFor = (price) =>
     padding.top + ((max - price) / range) * innerH;
 
-  // Horizontal grid lines (5 bands)
   const gridCount = 5;
   const gridLines = [];
 
   for (let i = 0; i <= gridCount; i += 1) {
     const price = min + (range * i) / gridCount;
     const y = yFor(price);
-
     gridLines.push({ y, price });
   }
 
-  // Vertical grid lines (every 8 candles)
   const vGridStep = Math.ceil(candles.length / 8);
   const vGridLines = [];
 
@@ -61,6 +60,20 @@ function CandleChart({
   const lastY = yFor(lastCandle.close);
   const lastBullish = lastCandle.close >= lastCandle.open;
 
+  // Compute MA path if provided
+  let maPoints = null;
+  if (movingAverage && movingAverage.length === candles.length) {
+    maPoints = movingAverage
+      .map((value, index) => {
+        if (value == null) return null;
+        const x = padding.left + index * stepX + stepX / 2;
+        const y = yFor(value);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .filter(Boolean)
+      .join(" ");
+  }
+
   return (
     <svg
       className="candle-chart"
@@ -69,7 +82,6 @@ function CandleChart({
       width="100%"
       height={height}
     >
-      {/* Horizontal grid + right-side price labels */}
       {gridLines.map(({ y, price }, i) => (
         <g key={`h-${i}`}>
           <line
@@ -92,7 +104,6 @@ function CandleChart({
         </g>
       ))}
 
-      {/* Vertical grid */}
       {vGridLines.map((x, i) => (
         <line
           key={`v-${i}`}
@@ -105,7 +116,6 @@ function CandleChart({
         />
       ))}
 
-      {/* Last price marker line */}
       <line
         x1={padding.left}
         x2={width - padding.right}
@@ -117,7 +127,6 @@ function CandleChart({
         opacity="0.7"
       />
 
-      {/* Last price tag */}
       <g transform={`translate(${width - padding.right + 4}, ${lastY - 10})`}>
         <rect
           x="0"
@@ -140,33 +149,24 @@ function CandleChart({
         </text>
       </g>
 
-      {/* Candles */}
       {candles.map((candle, i) => {
         const x =
           padding.left + i * stepX + stepX / 2;
 
         const bullish = candle.close >= candle.open;
-
         const wickTop = yFor(candle.high);
         const wickBottom = yFor(candle.low);
-
         const bodyTop = yFor(
           Math.max(candle.open, candle.close)
         );
         const bodyBottom = yFor(
           Math.min(candle.open, candle.close)
         );
-
-        const bodyHeight = Math.max(
-          1,
-          bodyBottom - bodyTop
-        );
-
+        const bodyHeight = Math.max(1, bodyBottom - bodyTop);
         const color = bullish ? "#16a34a" : "#dc2626";
 
         return (
           <g key={i}>
-            {/* Wick */}
             <line
               x1={x}
               x2={x}
@@ -175,8 +175,6 @@ function CandleChart({
               stroke={color}
               strokeWidth="1"
             />
-
-            {/* Body */}
             <rect
               x={x - candleW / 2}
               y={bodyTop}
@@ -190,6 +188,18 @@ function CandleChart({
           </g>
         );
       })}
+
+      {maPoints && (
+        <polyline
+          points={maPoints}
+          fill="none"
+          stroke="#f59e0b"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          opacity="0.9"
+        />
+      )}
     </svg>
   );
 }

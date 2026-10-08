@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
+import "./Transactions.css";
+
 const FILTERS = [
   { id: "ALL", label: "All" },
   { id: "DEMO_DEPOSIT", label: "Deposits" },

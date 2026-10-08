@@ -1,0 +1,240 @@
+/* ============================================================
+   YOUNGTRADERS — WATCHLIST
+   Saved markets as premium cards with sparklines.
+   ============================================================ */
+
+.watchlist-page {
+  padding-bottom: 60px;
+  animation: yt-page-enter var(--dur-page) var(--ease-out) both;
+}
+
+/* ============================================================
+   GRID
+   ============================================================ */
+
+.watchlist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+/* ============================================================
+   CARD
+   ============================================================ */
+
+.watchlist-card {
+  position: relative;
+  padding: 22px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
+  animation: yt-scale-in var(--dur-slow) var(--ease-out) both;
+}
+
+.watchlist-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--grad-brand);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.watchlist-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-strong);
+}
+
+.watchlist-card:hover::before {
+  opacity: 1;
+}
+
+/* ============================================================
+   CARD TOP — symbol + name + remove
+   ============================================================ */
+
+.watchlist-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.watchlist-card-top > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.watchlist-symbol {
+  display: block;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-dark);
+  margin-bottom: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.watchlist-name {
+  display: block;
+  font-size: 12px;
+  color: var(--text-light);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---------- Remove X ---------- */
+
+.watchlist-remove {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg-soft);
+  color: var(--text-light);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.watchlist-remove:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--danger-dark);
+  transform: scale(1.1);
+}
+
+.watchlist-remove:active {
+  transform: scale(0.95);
+}
+
+/* ============================================================
+   PRICE + CHANGE
+   ============================================================ */
+
+.watchlist-price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.watchlist-price {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-dark);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.watchlist-price-row > span {
+  font-size: 13.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.watchlist-price-row > span.rise-text {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--success-dark);
+}
+
+.watchlist-price-row > span.fall-text {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger-dark);
+}
+
+/* ============================================================
+   SPARKLINE
+   ============================================================ */
+
+.watchlist-spark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 4px 0;
+  border-radius: var(--radius-md);
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+
+.watchlist-spark svg {
+  display: block;
+  width: 100%;
+  height: 40px;
+}
+
+/* ============================================================
+   TRADE BUTTON
+   ============================================================ */
+
+.watchlist-trade-button {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-dark);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.watchlist-trade-button:hover {
+  background: var(--brand);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.32);
+}
+
+.watchlist-trade-button:active {
+  transform: translateY(0);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 600px) {
+  .watchlist-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .watchlist-card {
+    padding: 18px;
+  }
+
+  .watchlist-price {
+    font-size: 1.5rem;
+  }
+}

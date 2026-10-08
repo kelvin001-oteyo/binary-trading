@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
+import "./Deposit.css";
+
 const QUICK_AMOUNTS = [500, 1000, 5000, 10000, 25000];
 
 const METHODS = [

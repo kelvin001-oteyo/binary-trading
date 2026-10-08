@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useToast } from "../components/Toast.jsx";
+import "./Settings.css";
 
 const PREFS_KEY = "user_preferences";
 

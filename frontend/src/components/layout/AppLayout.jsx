@@ -4,6 +4,7 @@ import {
   Outlet,
   useNavigate,
 } from "react-router-dom";
+import "./AppLayout.css";
 
 function AppLayout() {
   const navigate = useNavigate();
@@ -38,6 +39,26 @@ function AppLayout() {
           label: "Trades",
           path: "/trades",
           icon: "↗",
+        },
+        {
+          label: "Watchlist",
+          path: "/watchlist",
+          icon: "★",
+        },
+      ],
+    },
+    {
+      title: "INSIGHTS",
+      items: [
+        {
+          label: "Analytics",
+          path: "/analytics",
+          icon: "◐",
+        },
+        {
+          label: "Leaderboard",
+          path: "/leaderboard",
+          icon: "◆",
         },
       ],
     },
@@ -89,10 +110,10 @@ function AppLayout() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <div className="brand-mark">B</div>
+          <div className="brand-mark">YT</div>
 
           <div>
-            <strong>Binary Trading</strong>
+            <strong>YoungTraders</strong>
             <span>Trading Platform</span>
           </div>
         </div>
@@ -159,10 +180,10 @@ function AppLayout() {
 
       <div className="mobile-topbar">
         <div className="sidebar-brand">
-          <div className="brand-mark">B</div>
+          <div className="brand-mark">YT</div>
 
           <div>
-            <strong>Binary Trading</strong>
+            <strong>YoungTraders</strong>
             <span>Trading Platform</span>
           </div>
         </div>
@@ -184,8 +205,7 @@ function AppLayout() {
         <footer className="app-footer">
           <div className="app-footer-inner">
             <span className="app-footer-copy">
-              © {new Date().getFullYear()} Binary
-              Trading · All data simulated
+              © {new Date().getFullYear()} YoungTraders
             </span>
 
             <div className="app-footer-links">

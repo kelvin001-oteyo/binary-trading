@@ -1,0 +1,380 @@
+/* ============================================================
+   YOUNGTRADERS — TRANSACTIONS
+   Wallet transaction history with filters and summary cards.
+   ============================================================ */
+
+.transactions-page {
+  padding-bottom: 60px;
+  animation: yt-page-enter var(--dur-page) var(--ease-out) both;
+}
+
+/* ---------- Count badge ---------- */
+
+.transactions-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  color: var(--text-body);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  box-shadow: var(--shadow-xs);
+  white-space: nowrap;
+}
+
+.transactions-count-badge strong {
+  color: var(--text-dark);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   SUMMARY CARDS
+   ============================================================ */
+
+.transactions-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.transactions-summary-card {
+  position: relative;
+  padding: 20px 22px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
+  animation: yt-scale-in var(--dur-slow) var(--ease-out) both;
+}
+
+.transactions-summary-card:nth-child(1) { animation-delay: 40ms; }
+.transactions-summary-card:nth-child(2) { animation-delay: 100ms; }
+.transactions-summary-card:nth-child(3) { animation-delay: 160ms; }
+.transactions-summary-card:nth-child(4) { animation-delay: 220ms; }
+
+.transactions-summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--grad-brand);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.transactions-summary-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+}
+
+.transactions-summary-card:hover::before {
+  opacity: 1;
+}
+
+.transactions-summary-card > span {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.transactions-summary-card > strong {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+.transactions-summary-card > small {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+
+.transactions-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.transactions-toolbar .markets-tabs {
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.transactions-toolbar .markets-search {
+  min-width: 240px;
+  max-width: 320px;
+}
+
+/* ============================================================
+   SKELETON
+   ============================================================ */
+
+.transactions-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.transactions-skeleton .skeleton-line {
+  height: 20px;
+  border-radius: var(--radius-sm);
+}
+
+.transactions-skeleton .skeleton-line:nth-child(odd) {
+  width: 100%;
+}
+
+.transactions-skeleton .skeleton-line:nth-child(even) {
+  width: 70%;
+}
+
+/* ============================================================
+   TABLE
+   ============================================================ */
+
+.transactions-table {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+}
+
+.transactions-table-head,
+.transactions-table-row {
+  display: grid;
+  grid-template-columns:
+    minmax(160px, 1.5fr)
+    minmax(110px, 1fr)
+    minmax(140px, 1.2fr)
+    minmax(120px, 1fr)
+    minmax(120px, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 14px 24px;
+}
+
+.transactions-table-head {
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.transactions-table-row {
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 13.5px;
+  color: var(--text-body);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.transactions-table-row:last-child {
+  border-bottom: none;
+}
+
+.transactions-table-row:hover {
+  background: var(--bg-soft);
+  transform: translateX(2px);
+}
+
+/* ---------- Description cell ---------- */
+
+.transactions-description {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+/* ---------- Balance cell ---------- */
+
+.transactions-balance {
+  font-size: 13.5px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text-dark);
+}
+
+.transactions-balance.rise-text {
+  color: var(--success-dark);
+}
+
+.transactions-balance.fall-text {
+  color: var(--danger-dark);
+}
+
+/* ============================================================
+   TYPE BADGES
+   ============================================================ */
+
+.transaction-type-badge,
+.transactions-table-row > span:nth-child(2) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  justify-self: start;
+  white-space: nowrap;
+}
+
+.badge-demo-deposit,
+.badge-DEMO_DEPOSIT {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success-dark);
+}
+
+.badge-trade-stake,
+.badge-TRADE_STAKE {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger-dark);
+}
+
+.badge-trade-return,
+.badge-TRADE_RETURN {
+  background: rgba(37, 99, 235, 0.15);
+  color: var(--brand-dark);
+}
+
+.badge-withdrawal,
+.badge-WITHDRAWAL {
+  background: rgba(245, 158, 11, 0.15);
+  color: #b45309;
+}
+
+/* Dots inside badges */
+.transaction-type-badge::before,
+.transactions-table-row > span:nth-child(2)::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ============================================================
+   LOAD MORE
+   ============================================================ */
+
+.transactions-load-more {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 20px 0;
+}
+
+.transactions-load-more .secondary-button {
+  height: 42px;
+  padding: 0 24px;
+  font-size: 13.5px;
+}
+
+.transactions-load-more .secondary-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1100px) {
+  .transactions-table-head,
+  .transactions-table-row {
+    grid-template-columns:
+      minmax(140px, 1.4fr)
+      minmax(100px, 0.9fr)
+      minmax(120px, 1.1fr)
+      minmax(110px, 0.9fr);
+    gap: 12px;
+    padding: 14px 20px;
+  }
+
+  .transactions-table-head > span:nth-child(4),
+  .transactions-table-row > .transactions-balance {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .transactions-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .transactions-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .transactions-toolbar .markets-search {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .transactions-table {
+    overflow-x: auto;
+  }
+
+  .transactions-table-head,
+  .transactions-table-row {
+    min-width: 640px;
+  }
+}
+
+@media (max-width: 600px) {
+  .transactions-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .transactions-toolbar .markets-tabs {
+    justify-content: flex-start;
+  }
+
+  .transactions-count-badge {
+    font-size: 11.5px;
+    padding: 6px 12px;
+  }
+}

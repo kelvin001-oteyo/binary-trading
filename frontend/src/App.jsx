@@ -8,7 +8,6 @@ import Markets from "./pages/Markets";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Info from "./pages/Info";
-
 import MarketDetail from "./pages/MarketDetail";
 
 // ============================================================
@@ -23,6 +22,9 @@ import Deposit from "./pages/Deposit";
 import Transactions from "./pages/Transactions";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Leaderboard from "./pages/Leaderboard";
+import Analytics from "./pages/Analytics";
+import Watchlist from "./pages/Watchlist";
 
 // ============================================================
 // ADMIN
@@ -42,18 +44,16 @@ function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* ====================================================
-            PUBLIC ROUTES
-           ==================================================== */}
+        {/* PUBLIC ROUTES */}
 
         <Route path="/" element={<Home />} />
 
         <Route path="/markets" element={<Markets />} />
-      
+
         <Route
-  path="/markets/:symbol"
-  element={<MarketDetail />}
-/>
+          path="/markets/:symbol"
+          element={<MarketDetail />}
+        />
 
         <Route path="/login" element={<Login />} />
 
@@ -62,9 +62,7 @@ function App() {
         <Route path="/info" element={<Info />} />
 
 
-        {/* ====================================================
-            PROTECTED USER ROUTES
-           ==================================================== */}
+        {/* PROTECTED ROUTES */}
 
         <Route
           element={
@@ -77,7 +75,10 @@ function App() {
 
           <Route path="/trades" element={<Trades />} />
 
-          <Route path="/trades/:id" element={<TradeDetails />} />
+          <Route
+            path="/trades/:id"
+            element={<TradeDetails />}
+          />
 
           <Route path="/ai" element={<AI />} />
 
@@ -94,14 +95,27 @@ function App() {
           />
 
           <Route path="/profile" element={<Profile />} />
-      
+
           <Route path="/settings" element={<Settings />} />
+
+          <Route
+            path="/leaderboard"
+            element={<Leaderboard />}
+          />
+
+          <Route
+            path="/analytics"
+            element={<Analytics />}
+          />
+
+          <Route
+            path="/watchlist"
+            element={<Watchlist />}
+          />
         </Route>
 
 
-        {/* ====================================================
-            ADMIN ROUTE
-           ==================================================== */}
+        {/* ADMIN ROUTE */}
 
         <Route
           path="/admin"
@@ -113,9 +127,7 @@ function App() {
         />
 
 
-        {/* ====================================================
-            UNKNOWN ROUTES
-           ==================================================== */}
+        {/* UNKNOWN ROUTES */}
 
         <Route
           path="*"

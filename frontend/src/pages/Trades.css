@@ -1,0 +1,428 @@
+/* ============================================================
+   YOUNGTRADERS — TRADES
+   Full trade history page with filters, table, pagination.
+   ============================================================ */
+
+.trades-page {
+  padding-bottom: 60px;
+  animation: yt-page-enter var(--dur-page) var(--ease-out) both;
+}
+
+/* ---------- Error / Loading ---------- */
+
+.error-message {
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius-md);
+  color: var(--danger-dark);
+  font-size: 13.5px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.page-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 80px 24px;
+  color: var(--text-light);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.page-loading::before {
+  content: '';
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--brand);
+  animation: yt-spin 0.8s linear infinite;
+}
+
+@keyframes yt-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Compact button (View all) ---------- */
+
+.compact-button {
+  padding: 9px 18px;
+  font-size: 13px;
+}
+
+/* ============================================================
+   SUMMARY STRIP
+   ============================================================ */
+
+.trades-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.trades-summary-card {
+  position: relative;
+  padding: 20px 22px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
+  animation: yt-scale-in var(--dur-slow) var(--ease-out) both;
+}
+
+.trades-summary-card:nth-child(1) { animation-delay: 40ms; }
+.trades-summary-card:nth-child(2) { animation-delay: 100ms; }
+.trades-summary-card:nth-child(3) { animation-delay: 160ms; }
+.trades-summary-card:nth-child(4) { animation-delay: 220ms; }
+
+.trades-summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--grad-brand);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.trades-summary-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+}
+
+.trades-summary-card:hover::before {
+  opacity: 1;
+}
+
+.trades-summary-card > span {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.trades-summary-card > strong {
+  font-size: 1.625rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+.trades-summary-card > small {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+
+.trades-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.trades-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.trades-toolbar-right .markets-search,
+.trades-toolbar-right .markets-sort,
+.trades-toolbar-right .secondary-button {
+  height: 42px;
+}
+
+.trades-toolbar-right .markets-search,
+.trades-toolbar-right .markets-sort {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* ============================================================
+   TRADES TABLE
+   ============================================================ */
+
+.full-trades-table {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+}
+
+.full-trades-header,
+.full-trades-row {
+  display: grid;
+  grid-template-columns:
+    minmax(140px, 1.2fr)
+    minmax(100px, 1fr)
+    minmax(90px, 0.85fr)
+    minmax(100px, 0.95fr)
+    minmax(90px, 0.85fr)
+    minmax(110px, 1fr)
+    90px;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 24px;
+}
+
+.full-trades-header {
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.full-trades-row {
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 13.5px;
+  color: var(--text-body);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+  cursor: pointer;
+}
+
+.full-trades-row:last-child {
+  border-bottom: none;
+}
+
+.full-trades-row:hover {
+  background: var(--bg-soft);
+  transform: translateX(2px);
+}
+
+.full-trades-row > div > strong {
+  font-weight: 800;
+  color: var(--text-dark);
+  font-variant-numeric: tabular-nums;
+  font-size: 13.5px;
+}
+
+.trades-date {
+  color: var(--text-light);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---------- Status pills ---------- */
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  justify-self: start;
+}
+
+.status-pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: #b45309;
+}
+
+.status-pending::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warning);
+  animation: yt-countdown-pulse 2s var(--ease-in-out) infinite;
+}
+
+.status-won {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success-dark);
+}
+
+.status-won::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.status-lost {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger-dark);
+}
+
+.status-lost::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+/* ---------- Table action ---------- */
+
+.table-action {
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-body);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+  justify-self: end;
+}
+
+.table-action:hover {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
+}
+
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+
+.trades-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.trades-pagination .secondary-button {
+  height: 38px;
+  padding: 0 18px;
+  font-size: 13px;
+}
+
+.trades-pagination .secondary-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.trades-pagination-label {
+  color: var(--text-body);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 120px;
+  text-align: center;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1100px) {
+  .full-trades-header,
+  .full-trades-row {
+    grid-template-columns:
+      minmax(120px, 1.1fr)
+      minmax(90px, 1fr)
+      minmax(80px, 0.8fr)
+      minmax(90px, 0.9fr)
+      minmax(90px, 0.85fr)
+      90px;
+    padding: 14px 18px;
+    gap: 12px;
+  }
+
+  .full-trades-header > span:nth-child(4),
+  .full-trades-row > div:nth-child(4) {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .trades-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .trades-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .trades-toolbar-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .trades-toolbar-right .markets-search,
+  .trades-toolbar-right .markets-sort,
+  .trades-toolbar-right .secondary-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .full-trades-table {
+    overflow-x: auto;
+  }
+
+  .full-trades-header,
+  .full-trades-row {
+    min-width: 720px;
+  }
+}
+
+@media (max-width: 600px) {
+  .trades-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .trades-pagination {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .trades-pagination-label {
+    order: -1;
+  }
+}

@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
+
+import "./MarketDetail.css";
 import {
-  useLocation,
   useNavigate,
   useParams,
 } from "react-router-dom";
 import api from "../services/api";
 import { useToast } from "../components/Toast.jsx";
 import CandleChart from "../components/CandleChart.jsx";
-import { useCandleData } from "../hooks/useCandleData.js";
+import {
+  useCandleData,
+  computeMA,
+  TIMEFRAMES,
+} from "../hooks/useCandleData.js";
 
 const MARKETS = {
   "EUR-USD": {
@@ -76,22 +81,35 @@ const MARKETS = {
   },
 };
 
+const TIMEFRAME_LIST = ["1m", "5m", "15m", "1h"];
+
+function formatPrice(value, decimals) {
+  return Number(value).toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
 function MarketDetail() {
   const { symbol } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const toast = useToast();
 
-  const market = useMemo(
-    () => MARKETS[symbol],
-    [symbol]
+  const market = useMemo(() => MARKETS[symbol], [symbol]);
+
+  const [timeframe, setTimeframe] = useState("1m");
+  const [showMA, setShowMA] = useState(true);
+
+  const { candles, currentPrice, change } = useCandleData(
+    market?.basePrice || 1,
+    market?.decimals || 5,
+    timeframe
   );
 
-  const { candles, currentPrice, change } =
-    useCandleData(
-      market?.basePrice || 1,
-      market?.decimals || 5
-    );
+  const maData = useMemo(
+    () => (showMA ? computeMA(candles, 20) : []),
+    [candles, showMA]
+  );
 
   const [wallet, setWallet] = useState(null);
   const [tradeType, setTradeType] = useState("RISE");
@@ -114,6 +132,40 @@ function MarketDetail() {
     };
   }, []);
 
+  // Order book — regenerated on every price tick
+  const orderBook = useMemo(() => {
+    const spread = currentPrice * 0.0004;
+
+    const buildSide = (side) => {
+      const rows = [];
+      for (let i = 0; i < 5; i += 1) {
+        const offset = spread * (i + 1);
+        const price =
+          side === "bid"
+            ? currentPrice - offset
+            : currentPrice + offset;
+
+        const size =
+          Math.round(
+            (Math.abs(Math.sin(i + currentPrice)) +
+              0.5) *
+              1000
+          ) / 10;
+
+        const depth = 20 + Math.abs(Math.cos(i + 1)) * 80;
+
+        rows.push({ price, size, depth });
+      }
+      return rows;
+    };
+
+    return {
+      bids: buildSide("bid"),
+      asks: buildSide("ask"),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Math.round(currentPrice * 1000)]);
+
   if (!market) {
     return (
       <div className="page-container">
@@ -131,12 +183,6 @@ function MarketDetail() {
       </div>
     );
   }
-
-  const formatPrice = (value, decimals) =>
-    Number(value).toLocaleString("en-US", {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    });
 
   const handlePlace = async () => {
     const numericStake = Number(stake);
@@ -188,6 +234,10 @@ function MarketDetail() {
     return Math.min(...candles.map((c) => c.low));
   }, [candles, market.basePrice]);
 
+  const openPrice = candles.length
+    ? candles[0].open
+    : market.basePrice;
+
   return (
     <div className="page-container market-detail-page">
       <button
@@ -227,16 +277,19 @@ function MarketDetail() {
         <div className="market-detail-price-block">
           <span>Current price</span>
           <strong>
-            {formatPrice(
-              currentPrice,
-              market.decimals
-            )}
+            {formatPrice(currentPrice, market.decimals)}
           </strong>
           <small>Updated just now</small>
         </div>
       </div>
 
       <div className="market-detail-stats">
+        <div>
+          <span>Open</span>
+          <strong>
+            {formatPrice(openPrice, market.decimals)}
+          </strong>
+        </div>
         <div>
           <span>24h high</span>
           <strong>
@@ -253,10 +306,6 @@ function MarketDetail() {
           <span>Volume</span>
           <strong>{market.volume}</strong>
         </div>
-        <div>
-          <span>Category</span>
-          <strong>{market.category}</strong>
-        </div>
       </div>
 
       <div className="market-detail-grid">
@@ -266,7 +315,9 @@ function MarketDetail() {
               <span className="page-eyebrow">
                 LIVE CHART
               </span>
-              <h2>Candlestick · 1m</h2>
+              <h2>
+                Candlestick · {timeframe}
+              </h2>
             </div>
 
             <div className="market-live-badge">
@@ -275,10 +326,43 @@ function MarketDetail() {
             </div>
           </div>
 
+          {/* ============ TIMEFRAME SWITCHER ============ */}
+          <div className="timeframe-row">
+            <div className="timeframe-tabs">
+              {TIMEFRAME_LIST.map((tf) => (
+                <button
+                  key={tf}
+                  type="button"
+                  className={
+                    timeframe === tf
+                      ? "timeframe-tab active"
+                      : "timeframe-tab"
+                  }
+                  onClick={() => setTimeframe(tf)}
+                >
+                  {tf}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className={
+                showMA
+                  ? "ma-toggle active"
+                  : "ma-toggle"
+              }
+              onClick={() => setShowMA((v) => !v)}
+            >
+              MA-20
+            </button>
+          </div>
+
           <CandleChart
             candles={candles}
             decimals={market.decimals}
             height={380}
+            movingAverage={showMA ? maData : null}
           />
         </section>
 
@@ -380,9 +464,7 @@ function MarketDetail() {
 
           <button
             type="button"
-            className={`primary-button full-button trade-submit-button ${
-              tradeType === "RISE" ? "" : ""
-            }`}
+            className="primary-button full-button trade-submit-button"
             onClick={handlePlace}
             disabled={placing}
           >
@@ -397,6 +479,87 @@ function MarketDetail() {
         </section>
       </div>
 
+      {/* ============ ORDER BOOK ============ */}
+      <div className="order-book-panel">
+        <div className="order-book-header">
+          <div>
+            <span className="page-eyebrow">
+              ORDER BOOK
+            </span>
+            <h2>{market.symbol}</h2>
+          </div>
+
+          <div className="order-book-spread">
+            <span>Spread</span>
+            <strong>
+              {formatPrice(
+                orderBook.asks[0].price -
+                  orderBook.bids[0].price,
+                market.decimals
+              )}
+            </strong>
+          </div>
+        </div>
+
+        <div className="order-book-columns">
+          <div className="order-book-side bids">
+            <div className="order-book-side-header">
+              <span>Bids (Buy)</span>
+              <span>Size</span>
+            </div>
+
+            {orderBook.bids.map((row, i) => (
+              <div
+                className="order-book-row"
+                key={`bid-${i}`}
+              >
+                <div
+                  className="order-book-depth"
+                  style={{ width: `${row.depth}%` }}
+                />
+                <span className="order-book-price">
+                  {formatPrice(
+                    row.price,
+                    market.decimals
+                  )}
+                </span>
+                <span className="order-book-size">
+                  {row.size.toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="order-book-side asks">
+            <div className="order-book-side-header">
+              <span>Asks (Sell)</span>
+              <span>Size</span>
+            </div>
+
+            {orderBook.asks.map((row, i) => (
+              <div
+                className="order-book-row"
+                key={`ask-${i}`}
+              >
+                <div
+                  className="order-book-depth"
+                  style={{ width: `${row.depth}%` }}
+                />
+                <span className="order-book-price">
+                  {formatPrice(
+                    row.price,
+                    market.decimals
+                  )}
+                </span>
+                <span className="order-book-size">
+                  {row.size.toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="info-panel">
         <div className="info-icon">i</div>
 
@@ -405,11 +568,13 @@ function MarketDetail() {
 
           <p>
             Candle data is simulated locally in your
-            browser. Each candle represents one
-            minute of price movement. Green candles
-            closed above their open, red closed
-            below. Trades execute against the current
-            price at the moment you click.
+            browser. Each candle represents one bar
+            of price movement at the selected
+            timeframe. Green candles closed above
+            their open, red closed below. The amber
+            line is a 20-period moving average.
+            Trades execute against the current price
+            at the moment you click.
           </p>
         </div>
       </div>

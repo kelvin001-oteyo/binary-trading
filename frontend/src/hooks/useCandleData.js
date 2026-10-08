@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 
 const DEFAULT_SEED = 60;
-const TICK_MS = 1500;
 
-function makeInitialCandles(basePrice, decimals, count) {
+// Timeframe → tick interval in ms
+export const TIMEFRAMES = {
+  "1m": 1500,
+  "5m": 3000,
+  "15m": 5000,
+  "1h": 8000,
+};
+
+function makeInitialCandles(basePrice, decimals, count, tickMs) {
   const candles = [];
   let price = basePrice;
 
@@ -19,7 +26,7 @@ function makeInitialCandles(basePrice, decimals, count) {
       Math.random() * basePrice * 0.0008;
 
     candles.push({
-      time: Date.now() - (count - i) * TICK_MS,
+      time: Date.now() - (count - i) * tickMs,
       open: Number(open.toFixed(decimals)),
       high: Number(high.toFixed(decimals)),
       low: Number(low.toFixed(decimals)),
@@ -32,9 +39,20 @@ function makeInitialCandles(basePrice, decimals, count) {
   return candles;
 }
 
-export function useCandleData(basePrice, decimals = 5) {
+export function useCandleData(
+  basePrice,
+  decimals = 5,
+  timeframe = "1m"
+) {
+  const tickMs = TIMEFRAMES[timeframe] || TIMEFRAMES["1m"];
+
   const [candles, setCandles] = useState(() =>
-    makeInitialCandles(basePrice, decimals, DEFAULT_SEED)
+    makeInitialCandles(
+      basePrice,
+      decimals,
+      DEFAULT_SEED,
+      tickMs
+    )
   );
 
   const [currentPrice, setCurrentPrice] = useState(basePrice);
@@ -45,11 +63,16 @@ export function useCandleData(basePrice, decimals = 5) {
   useEffect(() => {
     basePriceRef.current = basePrice;
     setCandles(
-      makeInitialCandles(basePrice, decimals, DEFAULT_SEED)
+      makeInitialCandles(
+        basePrice,
+        decimals,
+        DEFAULT_SEED,
+        tickMs
+      )
     );
     setCurrentPrice(basePrice);
     setChange(0);
-  }, [basePrice, decimals]);
+  }, [basePrice, decimals, tickMs]);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -88,13 +111,38 @@ export function useCandleData(basePrice, decimals = 5) {
 
         const next = [...current, newCandle];
 
-        // Keep last 80 candles max
         return next.slice(-80);
       });
-    }, TICK_MS);
+    }, tickMs);
 
     return () => clearInterval(id);
-  }, [decimals]);
+  }, [decimals, tickMs]);
 
   return { candles, currentPrice, change };
+}
+
+// Compute a simple moving average over candle closes.
+// Returns an array the same length as candles, with null
+// for the first (period - 1) entries.
+export function computeMA(candles, period = 20) {
+  if (!candles || candles.length === 0) return [];
+
+  const closes = candles.map((c) => c.close);
+  const result = new Array(closes.length).fill(null);
+
+  let sum = 0;
+
+  for (let i = 0; i < closes.length; i += 1) {
+    sum += closes[i];
+
+    if (i >= period) {
+      sum -= closes[i - period];
+    }
+
+    if (i >= period - 1) {
+      result[i] = sum / period;
+    }
+  }
+
+  return result;
 }
